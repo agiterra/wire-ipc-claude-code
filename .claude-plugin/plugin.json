@@ -1,0 +1,12 @@
+{
+  "name": "exchange-ipc",
+  "description": "Exchange IPC plugin for Claude Code — Ed25519 signed messaging between agents via The Exchange.",
+  "version": "0.1.0",
+  "keywords": [
+    "exchange",
+    "ipc",
+    "messaging",
+    "agent",
+    "mcp"
+  ]
+}
