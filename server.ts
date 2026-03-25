@@ -1,14 +1,14 @@
 #!/usr/bin/env bun
 /**
- * Exchange IPC plugin for Claude Code.
+ * Wire IPC plugin for Claude Code.
  *
  * Provides the send_message tool for outbound Ed25519-signed IPC messaging.
- * Registers the IPC webhook validator with the Exchange server on startup.
+ * Registers the IPC webhook validator with the Wire server on startup.
  *
  * Config env vars:
- *   EXCHANGE_URL            default http://localhost:9800
- *   EXCHANGE_AGENT_ID       required or auto-generated
- *   EXCHANGE_AGENT_NAME     display name (for registration)
+ *   WIRE_URL            default http://localhost:9800
+ *   WIRE_AGENT_ID       required or auto-generated
+ *   WIRE_AGENT_NAME     display name (for registration)
  */
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
@@ -17,30 +17,30 @@ import {
   ListToolsRequestSchema,
   CallToolRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { loadOrCreateKey, type KeyPair } from "@agiterra/exchange-tools";
+import { loadOrCreateKey, type KeyPair } from "@agiterra/wire-tools";
 import {
   IPC_VALIDATOR,
   registerIpcWebhook,
   sendSignedMessage,
-} from "@agiterra/exchange-ipc-tools";
+} from "@agiterra/wire-ipc-tools";
 
-const EXCHANGE_URL = process.env.EXCHANGE_URL ?? "http://localhost:9800";
+const WIRE_URL = process.env.WIRE_URL ?? "http://localhost:9800";
 const AGENT_ID =
-  process.env.EXCHANGE_AGENT_ID ?? `claude-${crypto.randomUUID().slice(0, 8)}`;
-const AGENT_NAME = process.env.EXCHANGE_AGENT_NAME ?? AGENT_ID;
+  process.env.WIRE_AGENT_ID ?? `claude-${crypto.randomUUID().slice(0, 8)}`;
+const AGENT_NAME = process.env.WIRE_AGENT_NAME ?? AGENT_ID;
 
 let keyPair: KeyPair | null = null;
 
 // --- MCP server ---
 
 const mcp = new Server(
-  { name: "exchange-ipc", version: "0.1.0" },
+  { name: "wire-ipc", version: "0.1.0" },
   {
     capabilities: { tools: {} },
     instructions:
-      "This plugin provides IPC messaging via The Exchange. " +
+      "This plugin provides IPC messaging via The Wire. " +
       "Use the send_message tool to send Ed25519-signed messages to other agents. " +
-      "Messages are routed through the Exchange message broker.",
+      "Messages are routed through the Wire message broker.",
   },
 );
 
@@ -50,7 +50,7 @@ mcp.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [
     {
       name: "send_message",
-      description: "Send an Ed25519-signed IPC message via The Exchange",
+      description: "Send an Ed25519-signed IPC message via The Wire",
       inputSchema: {
         type: "object" as const,
         properties: {
@@ -82,7 +82,7 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
     try {
       if (!keyPair) throw new Error("not initialized");
       const { seq } = await sendSignedMessage(
-        EXCHANGE_URL,
+        WIRE_URL,
         AGENT_ID,
         keyPair.privateKey,
         topic,
@@ -112,15 +112,15 @@ async function main(): Promise<void> {
   const transport = new StdioServerTransport();
   await mcp.connect(transport);
 
-  // Register IPC webhook so the Exchange server validates inbound IPC messages
-  await registerIpcWebhook(EXCHANGE_URL, AGENT_ID, IPC_VALIDATOR).catch((e) =>
-    console.error(`[exchange-ipc] webhook registration failed: ${e}`),
+  // Register IPC webhook so the Wire server validates inbound IPC messages
+  await registerIpcWebhook(WIRE_URL, AGENT_ID, IPC_VALIDATOR).catch((e) =>
+    console.error(`[wire-ipc] webhook registration failed: ${e}`),
   );
 
-  console.error(`[exchange-ipc] ready (agent=${AGENT_ID})`);
+  console.error(`[wire-ipc] ready (agent=${AGENT_ID})`);
 }
 
 main().catch((e) => {
-  console.error("[exchange-ipc] fatal:", e);
+  console.error("[wire-ipc] fatal:", e);
   process.exit(1);
 });
