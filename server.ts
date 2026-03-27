@@ -3,7 +3,7 @@
  * Wire IPC plugin for Claude Code.
  *
  * Provides the send_message tool for outbound Ed25519-signed IPC messaging.
- * Registers the IPC webhook validator with the Wire server on startup.
+ * Sender identity is verified by the Wire server's built-in JWT validator.
  *
  * Config env vars:
  *   WIRE_URL            default http://localhost:9800
@@ -18,11 +18,7 @@ import {
   CallToolRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { loadOrCreateKey, type KeyPair } from "@agiterra/wire-tools";
-import {
-  IPC_VALIDATOR,
-  registerIpcWebhook,
-  sendSignedMessage,
-} from "@agiterra/wire-ipc-tools";
+import { sendSignedMessage } from "@agiterra/wire-ipc-tools";
 
 const WIRE_URL = process.env.WIRE_URL ?? "http://localhost:9800";
 const AGENT_ID =
@@ -111,11 +107,6 @@ async function main(): Promise<void> {
 
   const transport = new StdioServerTransport();
   await mcp.connect(transport);
-
-  // Register IPC webhook so the Wire server validates inbound IPC messages
-  await registerIpcWebhook(WIRE_URL, AGENT_ID, IPC_VALIDATOR).catch((e) =>
-    console.error(`[wire-ipc] webhook registration failed: ${e}`),
-  );
 
   console.error(`[wire-ipc] ready (agent=${AGENT_ID})`);
 }
