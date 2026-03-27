@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@agiterra/wire-ipc-tools": "agiterra/wire-ipc-tools#v0.2.0",
-    "@agiterra/wire-tools": "agiterra/wire-tools#v0.5.0",
+    "@agiterra/wire-tools": "agiterra/wire-tools#v0.6.0",
     "@modelcontextprotocol/sdk": "^1.0.0"
   },
   "devDependencies": {
