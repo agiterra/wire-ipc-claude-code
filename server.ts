@@ -22,8 +22,9 @@ import { sendSignedMessage } from "@agiterra/wire-ipc-tools";
 
 const WIRE_URL = process.env.WIRE_URL ?? "http://localhost:9800";
 const AGENT_ID =
-  process.env.WIRE_AGENT_ID ?? `claude-${crypto.randomUUID().slice(0, 8)}`;
-const AGENT_NAME = process.env.WIRE_AGENT_NAME ?? AGENT_ID;
+  process.env._PANE_AGENT_ID ?? process.env.WIRE_AGENT_ID ?? `claude-${crypto.randomUUID().slice(0, 8)}`;
+const AGENT_NAME =
+  process.env._PANE_AGENT_NAME ?? process.env.WIRE_AGENT_NAME ?? AGENT_ID;
 
 let keyPair: KeyPair | null = null;
 
