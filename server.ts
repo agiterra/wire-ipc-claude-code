@@ -18,13 +18,14 @@ import {
   CallToolRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { loadOrCreateKey, type KeyPair } from "@agiterra/wire-tools";
+import { join } from "path";
 import { sendSignedMessage } from "@agiterra/wire-ipc-tools";
 
 const WIRE_URL = process.env.WIRE_URL ?? "http://localhost:9800";
 const AGENT_ID =
-  process.env._PANE_AGENT_ID ?? process.env.WIRE_AGENT_ID ?? `claude-${crypto.randomUUID().slice(0, 8)}`;
+  process.env.PANE_AGENT_ID ?? process.env.WIRE_AGENT_ID ?? `claude-${crypto.randomUUID().slice(0, 8)}`;
 const AGENT_NAME =
-  process.env._PANE_AGENT_NAME ?? process.env.WIRE_AGENT_NAME ?? AGENT_ID;
+  process.env.PANE_AGENT_NAME ?? process.env.WIRE_AGENT_NAME ?? AGENT_ID;
 
 let keyPair: KeyPair | null = null;
 
@@ -104,7 +105,13 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
 // --- Main ---
 
 async function main(): Promise<void> {
-  keyPair = await loadOrCreateKey(AGENT_ID);
+  // Load agent keys — check project-local .wire/keys/ first, then ~/.wire/keys/
+  const localKeyDir = join(process.cwd(), ".wire", "keys");
+  try {
+    keyPair = await loadOrCreateKey(AGENT_ID, localKeyDir);
+  } catch {
+    keyPair = await loadOrCreateKey(AGENT_ID);
+  }
 
   const transport = new StdioServerTransport();
   await mcp.connect(transport);
