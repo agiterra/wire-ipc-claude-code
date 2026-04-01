@@ -17,7 +17,7 @@ import {
   ListToolsRequestSchema,
   CallToolRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { loadOrCreateKey, type KeyPair } from "@agiterra/wire-tools";
+import type { KeyPair } from "@agiterra/wire-tools";
 import { join } from "path";
 import { sendSignedMessage } from "@agiterra/wire-ipc-tools";
 
@@ -106,9 +106,10 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
 
 async function main(): Promise<void> {
   // Load agent key from WIRE_PRIVATE_KEY env var (base64 PKCS8).
-  // Falls back to ~/.wire/keys/ for backwards compatibility.
   const rawKey = process.env.WIRE_PRIVATE_KEY;
-  if (rawKey) {
+  if (!rawKey) {
+    console.error("[wire-ipc] WIRE_PRIVATE_KEY not set — IPC sending disabled");
+  } else {
     const pkcs8 = Uint8Array.from(atob(rawKey), (c) => c.charCodeAt(0));
     const privateKey = await crypto.subtle.importKey("pkcs8", pkcs8, "Ed25519", true, ["sign"]);
     const jwk = await crypto.subtle.exportKey("jwk", privateKey);
@@ -116,8 +117,6 @@ async function main(): Promise<void> {
     const pubB64 = pubB64Url.replace(/-/g, "+").replace(/_/g, "/");
     const publicKey = pubB64 + "=".repeat((4 - (pubB64.length % 4)) % 4);
     keyPair = { publicKey, privateKey };
-  } else {
-    keyPair = await loadOrCreateKey(AGENT_ID);
   }
 
   const transport = new StdioServerTransport();
