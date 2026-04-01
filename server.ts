@@ -105,11 +105,18 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
 // --- Main ---
 
 async function main(): Promise<void> {
-  // Load agent keys — check project-local .wire/keys/ first, then ~/.wire/keys/
-  const localKeyDir = join(process.cwd(), ".wire", "keys");
-  try {
-    keyPair = await loadOrCreateKey(AGENT_ID, localKeyDir);
-  } catch {
+  // Load agent key from WIRE_PRIVATE_KEY env var (base64 PKCS8).
+  // Falls back to ~/.wire/keys/ for backwards compatibility.
+  const rawKey = process.env.WIRE_PRIVATE_KEY;
+  if (rawKey) {
+    const pkcs8 = Uint8Array.from(atob(rawKey), (c) => c.charCodeAt(0));
+    const privateKey = await crypto.subtle.importKey("pkcs8", pkcs8, "Ed25519", true, ["sign"]);
+    const jwk = await crypto.subtle.exportKey("jwk", privateKey);
+    const pubB64Url = jwk.x!;
+    const pubB64 = pubB64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const publicKey = pubB64 + "=".repeat((4 - (pubB64.length % 4)) % 4);
+    keyPair = { publicKey, privateKey };
+  } else {
     keyPair = await loadOrCreateKey(AGENT_ID);
   }
 
