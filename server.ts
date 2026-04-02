@@ -105,8 +105,9 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
 // --- Main ---
 
 async function main(): Promise<void> {
-  // Load agent key from WIRE_PRIVATE_KEY env var (base64 PKCS8).
-  const rawKey = process.env.WIRE_PRIVATE_KEY;
+  // Load agent key (base64 PKCS8). Pane-launched agents get their own key
+  // via PANE_PRIVATE_KEY which takes precedence over .env's WIRE_PRIVATE_KEY.
+  const rawKey = process.env.PANE_PRIVATE_KEY ?? process.env.WIRE_PRIVATE_KEY;
   if (!rawKey) {
     console.error("[wire-ipc] WIRE_PRIVATE_KEY not set — IPC sending disabled");
   } else {
