@@ -23,9 +23,9 @@ import { sendSignedMessage } from "@agiterra/wire-ipc-tools";
 
 const WIRE_URL = process.env.WIRE_URL ?? "http://localhost:9800";
 const AGENT_ID =
-  process.env.PANE_AGENT_ID ?? process.env.WIRE_AGENT_ID ?? `claude-${crypto.randomUUID().slice(0, 8)}`;
+  process.env.CREW_AGENT_ID ?? process.env.WIRE_AGENT_ID ?? `claude-${crypto.randomUUID().slice(0, 8)}`;
 const AGENT_NAME =
-  process.env.PANE_AGENT_NAME ?? process.env.WIRE_AGENT_NAME ?? AGENT_ID;
+  process.env.CREW_AGENT_NAME ?? process.env.WIRE_AGENT_NAME ?? AGENT_ID;
 
 let keyPair: KeyPair | null = null;
 
@@ -105,9 +105,9 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
 // --- Main ---
 
 async function main(): Promise<void> {
-  // Load agent key (base64 PKCS8). Pane-launched agents get their own key
-  // via PANE_PRIVATE_KEY which takes precedence over .env's WIRE_PRIVATE_KEY.
-  const rawKey = process.env.PANE_PRIVATE_KEY ?? process.env.WIRE_PRIVATE_KEY;
+  // Load agent key (base64 PKCS8). Crew-launched agents get their own key
+  // via CREW_PRIVATE_KEY which takes precedence over .env's WIRE_PRIVATE_KEY.
+  const rawKey = process.env.CREW_PRIVATE_KEY ?? process.env.WIRE_PRIVATE_KEY;
   if (!rawKey) {
     console.error("[wire-ipc] WIRE_PRIVATE_KEY not set — IPC sending disabled");
   } else {
