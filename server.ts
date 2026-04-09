@@ -17,9 +17,7 @@ import {
   ListToolsRequestSchema,
   CallToolRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import type { KeyPair } from "@agiterra/wire-tools";
-import { join } from "path";
-import { sendSignedMessage } from "@agiterra/wire-ipc-tools";
+import { sendSignedMessage, importKeyPair, type KeyPair } from "@agiterra/wire-tools";
 
 const WIRE_URL = process.env.WIRE_URL ?? "http://localhost:9800";
 const AGENT_ID =
@@ -111,13 +109,7 @@ async function main(): Promise<void> {
   if (!rawKey) {
     console.error("[wire-ipc] WIRE_PRIVATE_KEY not set — IPC sending disabled");
   } else {
-    const pkcs8 = Uint8Array.from(atob(rawKey), (c) => c.charCodeAt(0));
-    const privateKey = await crypto.subtle.importKey("pkcs8", pkcs8, "Ed25519", true, ["sign"]);
-    const jwk = await crypto.subtle.exportKey("jwk", privateKey);
-    const pubB64Url = jwk.x!;
-    const pubB64 = pubB64Url.replace(/-/g, "+").replace(/_/g, "/");
-    const publicKey = pubB64 + "=".repeat((4 - (pubB64.length % 4)) % 4);
-    keyPair = { publicKey, privateKey };
+    keyPair = await importKeyPair(rawKey);
   }
 
   const transport = new StdioServerTransport();
