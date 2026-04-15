@@ -25,4 +25,4 @@ Wire IPC — outbound Ed25519-signed messaging between agents via the Wire messa
 |-----|---------|-------------|
 | `WIRE_URL` | `http://localhost:9800` | Wire server base URL |
 | `AGENT_ID` | — | Sender identity (required) |
-| `WIRE_PRIVATE_KEY` | — | Ed25519 private key for signing (required) |
+| `AGENT_PRIVATE_KEY` | — | Ed25519 private key for signing (required) |
