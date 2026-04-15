@@ -1,6 +1,6 @@
 {
   "name": "@agiterra/wire-ipc-claude-code",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "Wire IPC plugin for Claude Code \u2014 Ed25519 signed outbound messaging",
   "license": "Apache-2.0",
   "type": "module",
@@ -9,7 +9,7 @@
     "start": "bun install --no-summary && bun server.ts"
   },
   "dependencies": {
-    "@agiterra/wire-ipc-tools": "agiterra/wire-ipc-tools#v1.0.1",
+    "@agiterra/wire-ipc-tools": "agiterra/wire-ipc-tools#v1.0.2",
     "@agiterra/wire-tools": "agiterra/wire-tools#v1.0.0",
     "@modelcontextprotocol/sdk": "^1.0.0"
   },
