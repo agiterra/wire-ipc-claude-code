@@ -18,6 +18,7 @@ Wire IPC — outbound Ed25519-signed messaging between agents via the Wire messa
 
 **MCP tools:**
 - `send_message` — send a signed message to another agent or channel via Wire
+- `register_agent` — sponsor-register a new Wire agent; returns identity + private key ready to pass into `crew.agent_launch` env
 
 ## Configuration
 
@@ -58,3 +59,30 @@ await send_message({
 **Broadcast:** omit `dest`. All Wire subscribers on `topic` receive it.
 
 The dashboard shows `payload.text` as the single-line summary — if your payload omits `text`, the dashboard falls back to `detail` → `message` → JSON-stringified payload. Including `text` is strongly preferred so the operator can scan the log at a glance.
+
+## Sponsor-registering new agents
+
+Orchestrators (ED-tier agents, spawn helpers) call `register_agent` to bring a new Wire agent online without hand-writing the JWT-sign-and-POST dance. The tool generates an Ed25519 keypair, signs the registration with the caller's `AGENT_PRIVATE_KEY` (sponsor flow), and returns the new agent's identity + private key.
+
+```ts
+const { agent_id, display_name, private_key_b64 } = await register_agent({
+  id: "danish",
+  // display_name optional — defaults to TitleCase(id)
+});
+
+// Feed directly into crew agent_launch:
+await agent_launch({
+  env: {
+    AGENT_ID: agent_id,
+    AGENT_NAME: display_name,
+    AGENT_PRIVATE_KEY: private_key_b64,
+    // …any other env the spawned agent needs (KNOWLEDGE_ENRICH_RULES, etc.)
+  },
+  project_dir: "/path/to/worktree",
+  prompt: "Run the ENG-3021 audit.",
+});
+```
+
+**Key handling:** the private key is returned as a string in the MCP response. It never touches disk. The orchestrator passes it through crew's `env` map into the spawned agent's process; from there the wire adapter reads it at startup and uses it for signing. Do not persist the returned `private_key_b64` anywhere other than the `agent_launch` env argument.
+
+**Who can sponsor:** whoever is running this MCP server, identified by `AGENT_ID`. The Wire server accepts the registration because the JWT is signed by an already-registered agent. There is no separate "sponsor" role — registration privilege is transitive: any registered agent can sponsor new agents.
