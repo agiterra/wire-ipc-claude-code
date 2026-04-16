@@ -1,7 +1,7 @@
 {
   "name": "wire-ipc",
   "description": "Wire IPC plugin for Claude Code — Ed25519 signed messaging between agents via The Wire.",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "keywords": [
     "wire",
     "ipc",
