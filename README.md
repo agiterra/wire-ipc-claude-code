@@ -1,32 +1,42 @@
-# wire-ipc-claude-code
+# wire-ipc
 
-Wire IPC — outbound Ed25519-signed messaging between agents via the Wire message broker.
+> Outbound Ed25519-signed messaging between agents via The Wire. The IPC layer of the Agiterra Multi-Agent Toolkit.
 
-## Prerequisites
+Part of the [Agiterra Multi-Agent Toolkit](https://github.com/agiterra/handbook). Pairs with the [`wire`](https://github.com/agiterra/wire-claude-code) plugin (which handles inbound + agent registration).
 
-- Wire server running (default: `localhost:9800`)
-- Agent identity (Ed25519 keypair)
-- Bun (https://bun.sh)
+## What this gets you
 
-## Install
+- **Your agent can talk to other agents** via signed messages routed through Wire
+- **Unicast or broadcast** — `dest` for one recipient, omit it for everyone on a topic
+- **Forge-proof identity** — every message is signed by the sender's Ed25519 key; Wire validates on receive
+- **Conventions for interoperability** — the shared `ipc` payload schema lets agents from different vendors and codebases understand each other
+
+## Quick setup
 
 ```
-/plugin install agiterra/wire-ipc-claude-code
+/plugin marketplace add agiterra/claude-marketplace   # one-time
+/plugin install wire-ipc@agiterra
 ```
 
-## Tools / Skills
+You'll also want [`wire`](https://github.com/agiterra/wire-claude-code) installed (it handles inbound delivery + identity registration). Most agents install both.
 
-**MCP tools:**
-- `send_message` — send a signed message to another agent or channel via Wire
-- `register_agent` — sponsor-register a new Wire agent; returns identity + private key ready to pass into `crew.agent_launch` env
+## For the agent
 
-## Configuration
+Tools exposed:
+
+| Tool | What it does |
+|---|---|
+| `send_message` | Send a signed message to another agent (unicast via `dest`) or broadcast (omit `dest`) |
+
+> **Note:** `register_agent` moved to the [`wire`](https://github.com/agiterra/wire-claude-code) plugin in v1.3.0. Use `mcp__plugin_wire_wire__register_agent` for new agent registration.
+
+## Reference
 
 | Var | Default | Description |
 |-----|---------|-------------|
 | `WIRE_URL` | `http://localhost:9800` | Wire server base URL |
-| `AGENT_ID` | — | Sender identity (required) |
-| `AGENT_PRIVATE_KEY` | — | Ed25519 private key for signing (required) |
+| `AGENT_ID` | (required) | Sender identity |
+| `AGENT_PRIVATE_KEY` | (required) | Ed25519 private key for signing |
 
 ## Payload convention
 
@@ -62,27 +72,4 @@ The dashboard shows `payload.text` as the single-line summary — if your payloa
 
 ## Sponsor-registering new agents
 
-Orchestrators (ED-tier agents, spawn helpers) call `register_agent` to bring a new Wire agent online without hand-writing the JWT-sign-and-POST dance. The tool generates an Ed25519 keypair, signs the registration with the caller's `AGENT_PRIVATE_KEY` (sponsor flow), and returns the new agent's identity + private key.
-
-```ts
-const { agent_id, display_name, private_key_b64 } = await register_agent({
-  id: "danish",
-  // display_name optional — defaults to TitleCase(id)
-});
-
-// Feed directly into crew agent_launch:
-await agent_launch({
-  env: {
-    AGENT_ID: agent_id,
-    AGENT_NAME: display_name,
-    AGENT_PRIVATE_KEY: private_key_b64,
-    // …any other env the spawned agent needs (KNOWLEDGE_ENRICH_RULES, etc.)
-  },
-  project_dir: "/path/to/worktree",
-  prompt: "Run the ENG-3021 audit.",
-});
-```
-
-**Key handling:** the private key is returned as a string in the MCP response. It never touches disk. The orchestrator passes it through crew's `env` map into the spawned agent's process; from there the wire adapter reads it at startup and uses it for signing. Do not persist the returned `private_key_b64` anywhere other than the `agent_launch` env argument.
-
-**Who can sponsor:** whoever is running this MCP server, identified by `AGENT_ID`. The Wire server accepts the registration because the JWT is signed by an already-registered agent. There is no separate "sponsor" role — registration privilege is transitive: any registered agent can sponsor new agents.
+`register_agent` moved to the [`wire`](https://github.com/agiterra/wire-claude-code) plugin in v1.3.0 (the registration concern belongs to wire-tools, not the IPC channel). See the wire plugin README for the sponsor-flow walkthrough.
