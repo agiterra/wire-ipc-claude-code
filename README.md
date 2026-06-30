@@ -7,7 +7,7 @@ Part of the [Agiterra Multi-Agent Toolkit](https://github.com/agiterra/handbook)
 ## What this gets you
 
 - **Your agent can talk to other agents** via signed messages routed through Wire
-- **Unicast or broadcast** — `dest` for one recipient, omit it for everyone on a topic
+- **Unicast or broadcast** — `dest` for one recipient, `broadcast: true` for everyone on a topic
 - **Forge-proof identity** — every message is signed by the sender's Ed25519 key; Wire validates on receive
 - **Conventions for interoperability** — the shared `ipc` payload schema lets agents from different vendors and codebases understand each other
 
@@ -26,7 +26,9 @@ Tools exposed:
 
 | Tool | What it does |
 |---|---|
-| `send_message` | Send a signed message to another agent (unicast via `dest`) or broadcast (omit `dest`) |
+| `send_message` | Send a signed message to one agent (unicast via `dest`) or to a whole topic (broadcast via `broadcast: true`) |
+
+`send_message` takes `{ topic, payload, dest? OR broadcast: true }`. **Exactly one** of `dest` (unicast) or `broadcast: true` is required — omitting both is rejected, and supplying both is rejected. Explicit broadcast keeps accidental fan-out from spamming every topic subscriber.
 
 > **Note:** `register_agent` moved to the [`wire`](https://github.com/agiterra/wire-claude-code) plugin in v1.3.0. Use `mcp__plugin_wire_wire__register_agent` for new agent registration.
 
@@ -35,8 +37,8 @@ Tools exposed:
 | Var | Default | Description |
 |-----|---------|-------------|
 | `WIRE_URL` | `http://localhost:9800` | Wire server base URL |
-| `AGENT_ID` | (required) | Sender identity |
-| `AGENT_PRIVATE_KEY` | (required) | Ed25519 private key for signing |
+| `AGENT_ID` | auto (`claude-<uuid>`) | Sender identity. Auto-generates a throwaway id if unset; set it to a stable, registered agent id for real IPC. |
+| `AGENT_PRIVATE_KEY` | (required to send) | Ed25519 private key for signing. Without it the server still boots, but sending is disabled. |
 
 ## Payload convention
 
@@ -56,7 +58,7 @@ Tools exposed:
 
 Additional fields are allowed for specialized payloads (e.g. `kind: "wrap-up"` often carries `ticket`, `pr`, `checklist`). Keep them snake_case or kebab-case for consistency.
 
-**Minimal send:**
+**Minimal unicast send:**
 
 ```ts
 await send_message({
@@ -66,7 +68,15 @@ await send_message({
 });
 ```
 
-**Broadcast:** omit `dest`. All Wire subscribers on `topic` receive it.
+**Broadcast:** set `broadcast: true` (do **not** just omit `dest` — omitting both `dest` and `broadcast` is rejected). All Wire subscribers on `topic` receive it.
+
+```ts
+await send_message({
+  topic: "ipc",
+  broadcast: true,
+  payload: { from: "fondant", kind: "status", text: "el-linear v1.1.0 published. All tests passing." },
+});
+```
 
 The dashboard shows `payload.text` as the single-line summary — if your payload omits `text`, the dashboard falls back to `detail` → `message` → JSON-stringified payload. Including `text` is strongly preferred so the operator can scan the log at a glance.
 
